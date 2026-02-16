@@ -1,0 +1,44 @@
+// GlassBox Ad Portal - Database Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        Int            @id @default(autoincrement())
+  email     String         @unique
+  password  String
+  role      String         @default("CLIENT") // ADMIN or CLIENT
+  client    ClientProfile?
+  createdAt DateTime       @default(now())
+}
+
+model ClientProfile {
+  id          Int            @id @default(autoincrement())
+  userId      Int            @unique
+  user        User           @relation(fields: [userId], references: [id])
+  companyName String
+  totalBudget Float          @default(0)
+  status      String         @default("ACTIVE") // ACTIVE, LEARNING, PAUSED
+  logoUrl     String?
+  notes       String?        // Plain English weekly update
+  metrics     DailyMetrics[]
+  createdAt   DateTime       @default(now())
+}
+
+model DailyMetrics {
+  id          Int           @id @default(autoincrement())
+  clientId    Int
+  client      ClientProfile @relation(fields: [clientId], references: [id])
+  date        DateTime
+  spend       Float         @default(0)
+  impressions Int           @default(0)
+  clicks      Int           @default(0)
+  conversions Int           @default(0)
+  createdAt   DateTime      @default(now())
+}
