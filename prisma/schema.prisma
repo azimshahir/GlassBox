@@ -1,12 +1,12 @@
 // GlassBox v2.0 - Ad Portal Database Schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "sqlite"
-  url      = "file:./dev.db"
 }
 
 // ============ USERS & AUTH ============
