@@ -1,23 +1,53 @@
-import { PrismaClient } from '../src/generated/prisma/client'
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
 import * as bcrypt from 'bcryptjs'
+import { createScriptPrismaClient } from './client'
 
-const adapter = new PrismaBetterSqlite3({ url: 'file:./prisma/dev.db' })
-const prisma = new PrismaClient({ adapter })
+const args = new Set(process.argv.slice(2))
+const { prisma, target, databaseLabel } = createScriptPrismaClient()
+
+const allowRemote = args.has('--allow-remote')
+const expectRemote = args.has('--expect-remote')
+const resetData =
+  args.has('--reset') || (!args.has('--no-reset') && target === 'sqlite')
 
 async function main() {
-  // Clear existing data
-  await prisma.alert.deleteMany()
-  await prisma.campaignMetrics.deleteMany()
-  await prisma.campaign.deleteMany()
-  await prisma.dailyMetrics.deleteMany()
-  await prisma.syncLog.deleteMany()
-  await prisma.user.deleteMany()
-  await prisma.client.deleteMany()
-  await prisma.googleConnection.deleteMany()
-  await prisma.settings.deleteMany()
+  console.log(`Seeding target: ${target} (${databaseLabel})`)
 
-  console.log('Cleared existing data')
+  if (expectRemote && target !== 'turso') {
+    throw new Error(
+      'Expected Turso target but script is using sqlite. Check TURSO_DATABASE_URL and TURSO_AUTH_TOKEN.'
+    )
+  }
+
+  if (target === 'turso' && !allowRemote) {
+    throw new Error(
+      'Refusing to seed Turso without --allow-remote. Run: npm run db:seed:turso'
+    )
+  }
+
+  // Clear existing data
+  if (resetData) {
+    await prisma.alert.deleteMany()
+    await prisma.campaignMetrics.deleteMany()
+    await prisma.campaign.deleteMany()
+    await prisma.dailyMetrics.deleteMany()
+    await prisma.syncLog.deleteMany()
+    await prisma.user.deleteMany()
+    await prisma.client.deleteMany()
+    await prisma.googleConnection.deleteMany()
+    await prisma.settings.deleteMany()
+
+    console.log('Cleared existing data')
+  } else {
+    console.log('Skipping destructive reset (use --reset to force).')
+
+    const existingUsers = await prisma.user.count()
+    const existingClients = await prisma.client.count()
+    if (existingUsers > 0 || existingClients > 0) {
+      throw new Error(
+        'Database already has data. Re-run with --reset (destructive) or use npm run db:bootstrap-admin for login setup only.'
+      )
+    }
+  }
 
   // Create Client 1
   const client1 = await prisma.client.create({

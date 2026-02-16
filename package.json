@@ -9,6 +9,10 @@
     "lint": "eslint",
     "postinstall": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed:turso": "tsx prisma/seed.ts --allow-remote --expect-remote --reset",
+    "db:bootstrap-admin": "tsx prisma/bootstrap-admin.ts",
+    "db:bootstrap-admin:turso": "tsx prisma/bootstrap-admin.ts --expect-remote",
+    "db:push": "prisma db push",
     "db:studio": "prisma studio"
   },
   "dependencies": {

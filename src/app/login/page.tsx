@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
 export default function LoginPage() {
+  const showDemoCredentials = process.env.NODE_ENV !== 'production'
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -138,19 +139,21 @@ export default function LoginPage() {
             </Link>
           </p>
 
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <p className="text-xs font-medium text-gray-500 text-center mb-3">Demo Credentials</p>
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Admin:</span>
-                <span className="text-gray-700 font-mono">admin@glassbox.com / admin123</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Client:</span>
-                <span className="text-gray-700 font-mono">ali@kedaikopi.com / client123</span>
+          {showDemoCredentials && (
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <p className="text-xs font-medium text-gray-500 text-center mb-3">Demo Credentials</p>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Admin:</span>
+                  <span className="text-gray-700 font-mono">admin@glassbox.com / admin123</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Client:</span>
+                  <span className="text-gray-700 font-mono">ali@kedaikopi.com / client123</span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>
