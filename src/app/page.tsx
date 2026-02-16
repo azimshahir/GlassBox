@@ -1,18 +1,16 @@
-import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { auth } from '@/lib/auth'
+import LandingPage from '@/components/LandingPage'
 
 export default async function Home() {
-  const cookieStore = await cookies()
-  const userId = cookieStore.get('userId')?.value
-  const userRole = cookieStore.get('userRole')?.value
+  const session = await auth()
 
-  if (!userId) {
-    redirect('/login')
+  if (session?.user) {
+    if (session.user.role === 'ADMIN') {
+      redirect('/admin')
+    }
+    redirect('/dashboard')
   }
 
-  if (userRole === 'ADMIN') {
-    redirect('/admin')
-  }
-
-  redirect('/dashboard')
+  return <LandingPage />
 }

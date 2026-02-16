@@ -1,7 +1,31 @@
 import { NextResponse } from 'next/server'
+import bcrypt from 'bcryptjs'
+import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+export async function GET() {
+  const session = await auth()
+  if (!session?.user || session.user.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const clients = await prisma.client.findMany({
+    include: {
+      user: { select: { email: true, name: true } },
+      _count: { select: { campaigns: true, dailyMetrics: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+
+  return NextResponse.json(clients)
+}
+
 export async function POST(request: Request) {
+  const session = await auth()
+  if (!session?.user || session.user.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const body = await request.json()
 
   // Check if email already exists
@@ -16,22 +40,40 @@ export async function POST(request: Request) {
     )
   }
 
-  // Create user and client profile
+  // Hash password
+  const hashedPassword = await bcrypt.hash(body.password, 10)
+
+  // Create client first
+  const client = await prisma.client.create({
+    data: {
+      companyName: body.companyName,
+      monthlyBudget: body.monthlyBudget || 0,
+      currency: body.currency || 'MYR',
+      status: 'LEARNING',
+      googleCustomerId: body.googleCustomerId,
+      googleConnectionId: body.googleConnectionId,
+    },
+  })
+
+  // Create user and link to client
   const user = await prisma.user.create({
     data: {
       email: body.email,
-      password: body.password, // In production, hash this!
+      password: hashedPassword,
+      name: body.name,
       role: 'CLIENT',
-      client: {
-        create: {
-          companyName: body.companyName,
-          totalBudget: body.totalBudget,
-          status: 'LEARNING',
-        },
-      },
+      clientId: client.id,
     },
-    include: { client: true },
   })
 
-  return NextResponse.json(user)
+  // Update client to link user
+  await prisma.client.update({
+    where: { id: client.id },
+    data: {},
+  })
+
+  return NextResponse.json({
+    ...client,
+    user: { email: user.email, name: user.name },
+  })
 }

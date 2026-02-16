@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { signOut } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 
 interface HeaderProps {
@@ -10,11 +10,8 @@ interface HeaderProps {
 }
 
 export function Header({ title, subtitle, children }: HeaderProps) {
-  const router = useRouter()
-
   async function handleLogout() {
-    await fetch('/api/auth/logout', { method: 'POST' })
-    router.push('/login')
+    await signOut({ callbackUrl: '/login' })
   }
 
   return (

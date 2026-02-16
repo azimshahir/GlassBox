@@ -1,15 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { signOut } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 
 export function AdminHeader() {
-  const router = useRouter()
-
   async function handleLogout() {
-    await fetch('/api/auth/logout', { method: 'POST' })
-    router.push('/login')
+    await signOut({ callbackUrl: '/login' })
   }
 
   return (

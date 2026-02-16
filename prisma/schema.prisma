@@ -1,4 +1,4 @@
-// GlassBox Ad Portal - Database Schema
+// GlassBox v2.0 - Ad Portal Database Schema
 
 generator client {
   provider = "prisma-client-js"
@@ -9,36 +9,147 @@ datasource db {
   url      = "file:./dev.db"
 }
 
+// ============ USERS & AUTH ============
+
 model User {
-  id        Int            @id @default(autoincrement())
-  email     String         @unique
-  password  String
-  role      String         @default("CLIENT") // ADMIN or CLIENT
-  client    ClientProfile?
-  createdAt DateTime       @default(now())
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String?  // hashed with bcrypt, null for Google-only users
+  name      String?
+  role      String   @default("CLIENT") // ADMIN, CLIENT
+  clientId  String?  @unique
+  client    Client?  @relation(fields: [clientId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-model ClientProfile {
-  id          Int            @id @default(autoincrement())
-  userId      Int            @unique
-  user        User           @relation(fields: [userId], references: [id])
-  companyName String
-  totalBudget Float          @default(0)
-  status      String         @default("ACTIVE") // ACTIVE, LEARNING, PAUSED
-  logoUrl     String?
-  notes       String?        // Plain English weekly update
-  metrics     DailyMetrics[]
-  createdAt   DateTime       @default(now())
+// ============ GOOGLE ADS CONNECTION ============
+
+model GoogleConnection {
+  id             String    @id @default(cuid())
+  googleEmail    String
+  refreshToken   String    // encrypted
+  accessToken    String?
+  tokenExpiry    DateTime?
+  mccAccountId   String?   // Manager account ID
+  isActive       Boolean   @default(true)
+  lastSyncAt     DateTime?
+  lastSyncStatus String?   // SUCCESS, FAILED
+  clients        Client[]
+  syncLogs       SyncLog[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 }
+
+// ============ CLIENTS ============
+
+model Client {
+  id                 String            @id @default(cuid())
+  companyName        String
+  googleCustomerId   String?           // Google Ads Customer ID (e.g., "123-456-7890")
+  googleConnectionId String?
+  googleConnection   GoogleConnection? @relation(fields: [googleConnectionId], references: [id])
+  monthlyBudget      Float             @default(0)
+  currency           String            @default("MYR")
+  status             String            @default("ACTIVE") // ACTIVE, LEARNING, PAUSED
+  notes              String?           // Plain English weekly update
+  logoUrl            String?
+  user               User?
+  campaigns          Campaign[]
+  dailyMetrics       DailyMetrics[]
+  alerts             Alert[]
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+}
+
+// ============ CAMPAIGNS (Synced from Google Ads) ============
+
+model Campaign {
+  id               String            @id @default(cuid())
+  clientId         String
+  client           Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  googleCampaignId String
+  name             String
+  status           String            // ENABLED, PAUSED, REMOVED
+  channelType      String            // SEARCH, DISPLAY, VIDEO, SHOPPING
+  dailyBudget      Float?
+  startDate        DateTime?
+  endDate          DateTime?
+  metrics          CampaignMetrics[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@unique([clientId, googleCampaignId])
+}
+
+// ============ METRICS (Time-series) ============
 
 model DailyMetrics {
-  id          Int           @id @default(autoincrement())
-  clientId    Int
-  client      ClientProfile @relation(fields: [clientId], references: [id])
+  id          String   @id @default(cuid())
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
   date        DateTime
-  spend       Float         @default(0)
-  impressions Int           @default(0)
-  clicks      Int           @default(0)
-  conversions Int           @default(0)
-  createdAt   DateTime      @default(now())
+  impressions Int      @default(0)
+  clicks      Int      @default(0)
+  cost        Float    @default(0)
+  conversions Float    @default(0)
+  ctr         Float    @default(0)
+  cpc         Float    @default(0)
+  roas        Float    @default(0)
+  source      String   @default("API") // API, CSV, MANUAL
+  createdAt   DateTime @default(now())
+
+  @@unique([clientId, date])
+}
+
+model CampaignMetrics {
+  id              String   @id @default(cuid())
+  campaignId      String
+  campaign        Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  date            DateTime
+  impressions     Int      @default(0)
+  clicks          Int      @default(0)
+  cost            Float    @default(0)
+  conversions     Float    @default(0)
+  ctr             Float    @default(0)
+  cpc             Float    @default(0)
+  impressionShare Float?
+  createdAt       DateTime @default(now())
+
+  @@unique([campaignId, date])
+}
+
+// ============ ALERTS ============
+
+model Alert {
+  id        String   @id @default(cuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  type      String   // BUDGET_80, BUDGET_90, BUDGET_100, CPC_SPIKE, CTR_DROP
+  message   String
+  severity  String   // LOW, MEDIUM, HIGH, CRITICAL
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// ============ SYNC LOGS ============
+
+model SyncLog {
+  id           String           @id @default(cuid())
+  connectionId String
+  connection   GoogleConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  type         String           // FULL, METRICS, CAMPAIGNS
+  status       String           // RUNNING, SUCCESS, FAILED
+  recordsCount Int              @default(0)
+  error        String?
+  startedAt    DateTime         @default(now())
+  completedAt  DateTime?
+}
+
+// ============ APP SETTINGS ============
+
+model Settings {
+  id    String @id @default("app")
+  key   String @unique
+  value String
 }

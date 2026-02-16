@@ -10,12 +10,13 @@ export async function POST(
 
   const metric = await prisma.dailyMetrics.create({
     data: {
-      clientId: parseInt(id),
+      clientId: id,
       date: new Date(body.date),
-      spend: body.spend,
-      impressions: body.impressions,
-      clicks: body.clicks,
-      conversions: body.conversions,
+      cost: body.cost ?? body.spend ?? 0,
+      impressions: body.impressions ?? 0,
+      clicks: body.clicks ?? 0,
+      conversions: body.conversions ?? 0,
+      source: 'MANUAL',
     },
   })
 
