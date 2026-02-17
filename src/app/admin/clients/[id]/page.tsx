@@ -53,9 +53,14 @@ export default function EditClientPage() {
   const [monthlyBudget, setMonthlyBudget] = useState('')
   const [status, setStatus] = useState('ACTIVE')
   const [notes, setNotes] = useState('')
+  const [googleCustomerId, setGoogleCustomerId] = useState('')
+  const [googleConnectionId, setGoogleConnectionId] = useState('')
+  const [connections, setConnections] = useState<Array<{ id: string; googleEmail: string; mccAccountId: string | null }>>([])
+
 
   useEffect(() => {
     fetchClient()
+    fetchConnections()
   }, [params.id])
 
   async function fetchClient() {
@@ -66,7 +71,17 @@ export default function EditClientPage() {
     setMonthlyBudget(data.monthlyBudget.toString())
     setStatus(data.status)
     setNotes(data.notes || '')
+    setGoogleCustomerId(data.googleCustomerId || '')
+    setGoogleConnectionId(data.googleConnectionId || '')
     setLoading(false)
+  }
+
+  async function fetchConnections() {
+    const res = await fetch('/api/google/accounts')
+    if (res.ok) {
+      const data = await res.json()
+      setConnections(data)
+    }
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -81,6 +96,8 @@ export default function EditClientPage() {
         monthlyBudget: parseFloat(monthlyBudget),
         status,
         notes,
+        googleCustomerId: googleCustomerId || null,
+        googleConnectionId: googleConnectionId || null,
       }),
     })
 
@@ -293,6 +310,43 @@ export default function EditClientPage() {
                       This will be shown to the client on their dashboard
                     </p>
                   </div>
+                  {/* Google Ads Integration */}
+                  <div className="pt-4 border-t border-gray-200">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-4">Google Ads Integration</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">Google Ads Customer ID</label>
+                        <Input
+                          value={googleCustomerId}
+                          onChange={(e) => setGoogleCustomerId(e.target.value)}
+                          placeholder="e.g. 123-456-7890"
+                          className="mt-1"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Found in Google Ads &gt; Account Settings (10-digit ID)
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">Google Connection</label>
+                        <select
+                          value={googleConnectionId}
+                          onChange={(e) => setGoogleConnectionId(e.target.value)}
+                          className="w-full h-10 px-3 mt-1 border border-gray-200 rounded-md bg-white text-sm"
+                        >
+                          <option value="">Not connected</option>
+                          {connections.map((conn) => (
+                            <option key={conn.id} value={conn.id}>
+                              {conn.googleEmail} {conn.mccAccountId ? `(MCC: ${conn.mccAccountId})` : ''}
+                            </option>
+                          ))}
+                        </select>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Link to a connected Google account for auto-sync
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="flex gap-3">
                     <Button type="submit" disabled={saving} className="bg-cyan-500 hover:bg-cyan-600">
                       {saving ? 'Saving...' : 'Save Changes'}

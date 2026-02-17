@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus, Link2, CheckCircle, XCircle, RefreshCw, AlertTriangle } from 'lucide-react'
 import { StaggerContainer, StaggerItem } from '@/components/ui/StaggerContainer'
+import { MccField } from './MccField'
 
 async function checkGoogleConfig() {
   // Check .env first, then fall back to DB settings
@@ -159,11 +160,7 @@ export default async function AccountsPage() {
                         </div>
                         <div>
                           <h3 className="font-medium text-gray-900">{conn.googleEmail}</h3>
-                          <p className="text-sm text-gray-500">
-                            {conn.mccAccountId
-                              ? `MCC: ${conn.mccAccountId}`
-                              : 'No MCC configured'}
-                          </p>
+                          <MccField connectionId={conn.id} currentMcc={conn.mccAccountId} />
                           <div className="flex items-center gap-4 mt-2 text-sm">
                             <span className="flex items-center gap-1">
                               {conn.isActive ? (
