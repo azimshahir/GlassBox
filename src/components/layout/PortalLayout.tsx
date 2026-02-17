@@ -56,6 +56,8 @@ export function PortalLayout({
           subtitle={subtitle}
           onMenuClick={() => setMobileMenuOpen(true)}
           alertCount={alertCount}
+          role={role}
+          userName={clientName}
         />
         <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8 scroll-smooth">{children}</main>
       </div>

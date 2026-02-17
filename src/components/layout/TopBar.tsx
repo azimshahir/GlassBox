@@ -9,9 +9,12 @@ interface TopBarProps {
   subtitle?: string
   onMenuClick?: () => void
   alertCount?: number
+  role?: string
+  userName?: string
 }
 
-export function TopBar({ title, subtitle, onMenuClick, alertCount = 0 }: TopBarProps) {
+export function TopBar({ title, subtitle, onMenuClick, alertCount = 0, role, userName }: TopBarProps) {
+  const displayName = role === 'ADMIN' ? 'Admin' : userName || 'User'
   return (
     <header className="h-20 bg-background/50 backdrop-blur-md border-b border-border sticky top-0 z-10 flex items-center justify-between px-6 lg:px-8 transition-colors duration-300">
       <div className="flex items-center gap-4">
@@ -57,7 +60,7 @@ export function TopBar({ title, subtitle, onMenuClick, alertCount = 0 }: TopBarP
               <User className="w-5 h-5" />
             </div>
             <div className="hidden sm:flex flex-col items-start">
-              <span className="text-sm font-semibold text-foreground leading-none">Admin</span>
+              <span className="text-sm font-semibold text-foreground leading-none">{displayName}</span>
               <span className="text-xs text-muted-foreground">View Profile</span>
             </div>
           </button>
