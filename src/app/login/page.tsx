@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
 export default function LoginPage() {
-  const showDemoCredentials = process.env.NODE_ENV !== 'production'
+  const showDemoCredentials = true
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
